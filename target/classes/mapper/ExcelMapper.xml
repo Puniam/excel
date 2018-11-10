@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="org.excelProject.dao.ExcelMapper" >
+  <resultMap id="BaseResultMap" type="org.excelProject.pojo.Excel" >
+    <constructor >
+      <arg column="THEDATE" jdbcType="DECIMAL" javaType="java.lang.Integer" />
+      <arg column="STOCKID" jdbcType="DECIMAL" javaType="java.lang.Integer" />
+      <arg column="OPENPRICE" jdbcType="DECIMAL" javaType="java.math.BigDecimal" />
+      <arg column="HIGHPRICE" jdbcType="DECIMAL" javaType="java.math.BigDecimal" />
+      <arg column="LOWPRICE" jdbcType="DECIMAL" javaType="java.math.BigDecimal" />
+      <arg column="CLOSEPRICE" jdbcType="DECIMAL" javaType="java.math.BigDecimal" />
+      <arg column="MATCHQTY" jdbcType="DECIMAL" javaType="java.lang.Long" />
+      <arg column="MATCHVALUE" jdbcType="DECIMAL" javaType="java.lang.Long" />
+    </constructor>
+  </resultMap>
+  <insert id="insert" parameterType="org.excelProject.pojo.Excel" >
+    insert into EXCEL (THEDATE, STOCKID, OPENPRICE, 
+      HIGHPRICE, LOWPRICE, CLOSEPRICE, 
+      MATCHQTY, MATCHVALUE)
+    values (#{thedate,jdbcType=DECIMAL}, #{stockid,jdbcType=DECIMAL}, #{openprice,jdbcType=DECIMAL}, 
+      #{highprice,jdbcType=DECIMAL}, #{lowprice,jdbcType=DECIMAL}, #{closeprice,jdbcType=DECIMAL}, 
+      #{matchqty,jdbcType=DECIMAL}, #{matchvalue,jdbcType=DECIMAL})
+  </insert>
+  <insert id="insertSelective" parameterType="org.excelProject.pojo.Excel" >
+    insert into EXCEL
+    <trim prefix="(" suffix=")" suffixOverrides="," >
+      <if test="thedate != null" >
+        THEDATE,
+      </if>
+      <if test="stockid != null" >
+        STOCKID,
+      </if>
+      <if test="openprice != null" >
+        OPENPRICE,
+      </if>
+      <if test="highprice != null" >
+        HIGHPRICE,
+      </if>
+      <if test="lowprice != null" >
+        LOWPRICE,
+      </if>
+      <if test="closeprice != null" >
+        CLOSEPRICE,
+      </if>
+      <if test="matchqty != null" >
+        MATCHQTY,
+      </if>
+      <if test="matchvalue != null" >
+        MATCHVALUE,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides="," >
+      <if test="thedate != null" >
+        #{thedate,jdbcType=DECIMAL},
+      </if>
+      <if test="stockid != null" >
+        #{stockid,jdbcType=DECIMAL},
+      </if>
+      <if test="openprice != null" >
+        #{openprice,jdbcType=DECIMAL},
+      </if>
+      <if test="highprice != null" >
+        #{highprice,jdbcType=DECIMAL},
+      </if>
+      <if test="lowprice != null" >
+        #{lowprice,jdbcType=DECIMAL},
+      </if>
+      <if test="closeprice != null" >
+        #{closeprice,jdbcType=DECIMAL},
+      </if>
+      <if test="matchqty != null" >
+        #{matchqty,jdbcType=DECIMAL},
+      </if>
+      <if test="matchvalue != null" >
+        #{matchvalue,jdbcType=DECIMAL},
+      </if>
+    </trim>
+  </insert>
+
+  <!--如果批量插入 没有唯一主键则加入useGeneratedKeys="false" 不然会报错-->
+  <insert id="insertList" parameterType="java.util.List" useGeneratedKeys="false">
+    insert into excel(
+    stockid,
+    thedate,
+    openprice,
+    highprice,
+    lowprice,
+    closeprice,
+    matchqty,
+    matchvalue
+    )
+    <foreach collection="list" index="index" item="item" separator="union all">
+
+      (
+      select
+      #{item.stockid},
+      #{item.thedate},
+      #{item.openprice},
+      #{item.highprice},
+      #{item.lowprice},
+      #{item.closeprice},
+      #{item.matchqty},
+      #{item.matchvalue}
+      from dual
+      )
+    </foreach>
+  </insert>
+  <select id="query"  resultType="ExcelDto">
+    select
+    t.thedate ,
+    t.openprice ,
+    t.highprice ,
+    t.lowprice ,
+    t.closeprice ,
+    t.matchqty ,
+    t.matchvalue,
+    lpad(t.stockid,6,0) as stockid
+    from
+    (
+    select rownum as rn,e.* from
+    excel e
+    <where>
+    <if test="beginTime!=null and beginTime!=''and beginTime!=0">
+    e.thedate>=#{beginTime} and
+    </if>
+
+      <if test="endTime!=null and endTime!=''and endTime!=0">
+        e.thedate<![CDATA[<=]]>#{endTime} and
+      </if>
+
+        <if test="stockId!=0 and stockId!=null">
+            stockid=#{stockId} and
+        </if>
+
+        rownum<![CDATA[<=]]>#{pageNum}*10
+
+    </where>
+
+    ) t where t.rn>(#{pageNum}-1)*10
+
+
+  </select>
+
+
+    <select id="queryList"  resultType="ExcelDto">
+        select
+        thedate ,
+        openprice ,
+        highprice ,
+        lowprice ,
+        closeprice ,
+        matchqty ,
+        matchvalue,
+        lpad(stockid,6,0) as stockid
+        from excel
+
+        <where>
+            <if test="beginTime!=null and beginTime!=''and beginTime!=0">
+                e.thedate>=#{beginTime} and
+            </if>
+
+            <if test="endTime!=null and endTime!=''and endTime!=0">
+                e.thedate<![CDATA[<=]]>#{endTime} and
+            </if>
+
+            <if test="stockId!=0 and stockId!=null">
+                stockid=#{stockId} and
+            </if>
+          1=1
+        </where>
+
+
+
+    </select>
+
+  <select id="queryCount" resultType="int" >
+
+    select count(*) from
+    excel e
+    <where>
+      <if test="beginTime!=null and beginTime!='' and beginTime!=0">
+        e.thedate>=#{beginTime} and
+      </if>
+
+      <if test="endTime!=null and endTime!='' and endTime!=0">
+        e.thedate<![CDATA[<=]]>#{endTime} and
+      </if>
+
+      <if test="stockId!=0 and stockId!=null">
+        stockid=#{stockId} and
+      </if>
+      1=1
+    </where>
+
+  </select>
+
+  <delete id="delete">
+    delete from excel e
+    <where>
+      <if test="beginTime!=null and beginTime!='' and beginTime!=0">
+        e.thedate>=#{beginTime} and
+      </if>
+
+      <if test="endTime!=null and endTime!='' and endTime!=0">
+        e.thedate<![CDATA[<=]]>#{endTime} and
+      </if>
+
+      <if test="stockId!=0 and stockId!=null">
+        stockid=#{stockId} and
+      </if>
+      1=1
+    </where>
+  </delete>
+
+  <update id="update">
+
+  </update>
+</mapper>

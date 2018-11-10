@@ -1,0 +1,65 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:rabbit="http://www.springframework.org/schema/rabbit"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/rabbit
+           http://www.springframework.org/schema/rabbit/spring-rabbit.xsd
+           http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <context:property-placeholder location="classpath:rabbitmq.properties" />
+
+<bean id="connectionFactory"
+      class="org.springframework.amqp.rabbit.connection.CachingConnectionFactory">
+    <constructor-arg value="localhost"/>
+    <property name="virtualHost" value="/lee"/>
+    <property name="username" value="lee"/>
+    <property name="password" value="123456"/>
+    <property name="channelCacheSize" value="1"/>
+    </bean>
+
+   <!-- <rabbit:connection-factory id="connectionFactory"
+                               username="lee" password="123456" host="localhost" port="5672" virtual-host="/lee"
+    />-->
+
+
+
+
+
+
+    <!--消息发送 模板-->
+    <!--<rabbit:template id="template" connection-factory="connectionFactory" queue="myQueue"/>-->
+    <rabbit:template id="template" connection-factory="connectionFactory" exchange="excel"/>
+
+    <!--mq管理器 管理队列和exchange-->
+    <rabbit:admin id="admin" connection-factory="connectionFactory"/>
+
+    <rabbit:fanout-exchange name="excel">
+        <rabbit:bindings>
+            <rabbit:binding queue="myQueue"/>
+        </rabbit:bindings>
+    </rabbit:fanout-exchange>
+
+    <!--
+    auto-delete 当所有消费者断开连接时候是否删除队列
+    durable 队列是否持久化
+    -->
+    <rabbit:queue id="myQueue" name="myQueue"
+                  exclusive="false"
+                  durable="true"
+                  declared-by="admin"
+                  auto-declare="true"
+                  auto-delete="false"/>
+
+    <bean id="ConsumerA"  class="org.excelProject.service.ConsumerA"/>
+    <bean id="ConsumerB"  class="org.excelProject.service.ConsumerB"/>
+    <!--消费者ack模式设置为手动-->
+    <rabbit:listener-container connection-factory="connectionFactory" acknowledge="manual" >
+        <rabbit:listener ref="ConsumerA"  queues="myQueue"/>
+        <rabbit:listener ref="ConsumerB"  queues="myQueue"/>
+    </rabbit:listener-container>
+
+
+
+
+</beans>
